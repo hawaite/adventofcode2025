@@ -1,56 +1,36 @@
 from functools import reduce
 import operator
 
-def add(num_list):
-    return sum(num_list)
-
-def mult(num_list):
-    return reduce(operator.mul, num_list, 1)
-
 def main():
     with(open("./input.txt", "r")) as fp:
         lines = fp.readlines()
+    
     total = 0
 
-    num_lines = []
     ops = lines[-1].split()
-    for line in lines[:-1]:
-        num_lines.append(line.strip("\n")+" ")
-
-    print(num_lines)
-    print(ops)
-
+    # update all the number lines to not finish in a newline, 
+    # but add an extra space on the end of every line such that
+    # we catch the last block of numbers
+    number_lines = [x.strip("\n") + " " for x in lines[:-1]]
+    total_col_count = len(number_lines[0])
+    number_of_lines = len(number_lines)
 
     current_group_nums = []
-    for col in range(len(num_lines[0])):
-        col_chars = []
-        for row in range(len(num_lines)):
-            col_chars.append(num_lines[row][col])
+    for col in range(total_col_count):
+        col_chars = [ number_lines[row_ix][col] for row_ix in range(number_of_lines) ]
 
-        any_non_blank = any(filter(lambda x: x != " ", col_chars))
-        all_blank = not any_non_blank
-        if not all_blank:
+        all_blank = not any(filter(lambda x: x != " ", col_chars))
+
+        if not all_blank: # glue this number together and store it
             current_group_nums.append(int(str.join("", col_chars).strip()))
-        else:
-            print(current_group_nums)
-            print(ops[0])
+        else: # column was blank, process current group
             if ops[0] == "+":
-                res = add(current_group_nums)
-                print(res)
-                total += res
+                total += sum(current_group_nums)
             elif ops[0] == "*":
-                res = mult(current_group_nums)
-                print(res)
-                total += res
-            print("---------")
-            # pop an op
+                total += reduce(operator.mul, current_group_nums, 1)
+            # remove used operator and empty the current group
             ops = ops[1:]
             current_group_nums = []
-            # was all blank.
-            # do op on the group
-            # reset current_group
-        # print(f"col: {col}, chars: {col_chars} all_blank: {not any_non_blank}")
-
 
     print(f"total: {total}")
 
