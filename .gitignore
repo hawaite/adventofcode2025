@@ -2,6 +2,9 @@
 input.txt
 example.txt
 
+#cProfile output
+*.perf
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
