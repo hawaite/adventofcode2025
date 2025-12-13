@@ -1,29 +1,28 @@
 from networkx import DiGraph
 import networkx as nx
 
-def count_root_to_leaves(dag, root):
-    # in this context, topological sort just sorts by row then column for us.
+def count_root_to_leaves(dag:DiGraph, root):
+    # dynamic programming over a topological sort of the directed-acylic graph
+    # to count all possible paths to the leaf nodes
     topology = list(nx.topological_sort(dag))
-    print(f"topology: {topology}")
-    counts = {n: 0 for n in dag.nodes()}
-    counts[root] = 1
+    nx.set_node_attributes(dag, 0, name="count")
+    dag.nodes[root]["count"] = 1
+
     for current_node in topology:
-        count_current_node = counts[current_node]
+        count_current_node = dag.nodes[root]["count"]
         if count_current_node == 0:
-            continue
+            continue # bail. Nothing entered this node.
         for next_node in dag.successors(current_node):
-            counts[next_node] += count_current_node
+            dag.nodes[next_node]["count"] += dag.nodes[current_node]["count"]
+    
+    # get all the leaf nodes on, get the count attribute on them and sum them.
     leaves = [n for n, d in dag.out_degree() if d == 0]
-    total = sum(counts[n] for n in leaves)
-    return total, {n: counts[n] for n in leaves}
+    return sum([nx.get_node_attributes(dag, "count")[x] for x in leaves])
 
-def main():
-    with(open("./input.txt", "r")) as fp:
-        lines = fp.readlines()
-
+def populate_grid_with_beams(lines):
     processed = []
     for line_ix, line in enumerate(lines):
-        line_as_list = list(line.strip())
+        line_as_list = list(line)
         # move first line to output unconditionally
         if line_ix == 0:
             processed.append(line_as_list)
@@ -39,7 +38,11 @@ def main():
             elif cell == "^" and prev_row[cell_ix] == "|":
                 line_as_list[cell_ix-1] = "|"
                 line_as_list[cell_ix+1] = "|"
-        processed.append(line_as_list)       
+        processed.append(line_as_list)    
+    return processed
+
+def build_graph(lines) -> tuple[DiGraph, tuple[int,int]]:
+    processed = populate_grid_with_beams(lines)
 
     # build a Directed Acyclic Graph (DAG) from the grid above
     graph = DiGraph()
@@ -68,10 +71,14 @@ def main():
                 while line_to_check < len(processed) and processed[line_to_check][cell_ix+1] == "|":
                     line_to_check += 1
                 graph.add_edge((line_ix, cell_ix), (line_to_check, cell_ix+1))
+    return (graph, root)
+
+def main():
+    with(open("./input.txt", "r")) as fp:
+        lines = list(map(str.strip, fp.readlines()))
+
+    dag, root = build_graph(lines)
     
-    print(f"total: {count_root_to_leaves(graph, root)}")
-
-
-
+    print(f"total: {count_root_to_leaves(dag, root)}")
 if __name__ == "__main__":
     main()
