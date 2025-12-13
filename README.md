@@ -1,7 +1,6 @@
 # adventofcode2025
 
 ## TODO
-- day 4 part 2
 - refactor day 7 part 2
 - refactor day 8 part 2
 - day 9
