@@ -1,24 +1,8 @@
-import networkx as nx
-from networkx import Graph
 from itertools import combinations
-from dataclasses import dataclass
-
-@dataclass(frozen=True)
-class Edge:
-    p1:     tuple
-    p2:     tuple
-    weight: int
+import heapq
 
 def calc_distance(p1, p2):
     return ((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2 + (p1[2] - p2[2])**2)**0.5
-
-# hacky fast-escape thing for testing if the number of isolates is something greater than 0
-# without identifying ALL isolates like the nx functions appear to do
-def has_isolates(graph:Graph, nodes):
-    for node in nodes:
-        if graph.degree[node] == 0:
-            return True
-    return False
 
 def main():
     input_file = "./input.txt"
@@ -26,22 +10,25 @@ def main():
         lines = map(str.strip, fp.readlines())
 
     nodes = [tuple(map(int,line.split(","))) for line in lines]
+    unconnected_node_set = set(nodes)
     all_edges = combinations(nodes, 2)
-
-    g = nx.Graph()
-    g.add_nodes_from(nodes)
     
-    edges_with_weights = [Edge(p1=x[0], p2=x[1], weight=calc_distance(x[0], x[1])) for x in all_edges]
-    sorted_edges_with_weights = sorted(edges_with_weights, key=lambda edge: edge.weight)
-    
-    # this is an absurdly inefficient way of doing this that takes single digit minutes to complete
-    while has_isolates(g, nodes):
-        
-        e = sorted_edges_with_weights[0]
-        sorted_edges_with_weights = sorted_edges_with_weights[1:]
-        g.add_edge(e.p1, e.p2, weight=e.weight)
+    # format (weight, p1, p2)
+    # heapify will use the first element of a tuple for comparisons
+    # This used to be a "sorted" but using cProfile highlighted that all the sortedlist[1:] was killing performance
+    # Using sorted and naively chopping the first element was taking 4 minutes.
+    # min-heap takes less than a second
+    edges_with_weights = [(calc_distance(x[0], x[1]), x[0], x[1]) for x in all_edges]
+    heapq.heapify(edges_with_weights)
 
-    print(f"answer: {e.p1[0] * e.p2[0]}")
+    # # while there are still unconnected nodes, connect the two closest point
+    while len(unconnected_node_set) > 0:
+        shortest_length_edge = heapq.heappop(edges_with_weights)
+        unconnected_node_set.discard(shortest_length_edge[1])
+        unconnected_node_set.discard(shortest_length_edge[2])
+
+    # everything connected
+    print(f"answer: {shortest_length_edge[1][0] * shortest_length_edge[2][0]}")
 
 if __name__ == "__main__":
     main()
