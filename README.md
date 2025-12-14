@@ -2,7 +2,6 @@
 
 ## TODO
 - refactor day 8 part 2
-- day 9 part 2
 
 ## day 1
 Modulo math (safe dial rotations)
